@@ -28,9 +28,11 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
         font = ImageFont.load_default()
 
     text = "BE DELUSIONAL"
-    text_width, text_height = draw.textsize(text, font=font)
-    x = (image.width - text_width) / 2
-    y = (image.height - text_height) / 2
+    bbox = draw.textbbox((0, 0), text, font=font)
+text_width = bbox[2] - bbox[0]
+text_height = bbox[3] - bbox[1]
+x = (image.width - text_width) / 2
+y = (image.height - text_height) / 2
     draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
 
     output = io.BytesIO()
