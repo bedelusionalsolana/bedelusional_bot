@@ -20,7 +20,7 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
     image = Image.alpha_composite(image, black_overlay)
 
     draw = ImageDraw.Draw(image)
-    font_size = int(min(image.size) / 8)
+    font_size = int(min(image.size) / 3.5)
 
     try:
         font = ImageFont.truetype("arial.ttf", font_size)
