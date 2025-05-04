@@ -3,24 +3,24 @@ import io
 from pathlib import Path
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 
 async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message or not update.message.reply_to_message.photo:
         await update.message.reply_text("Reply to a photo with /bedelusional.")
         return
 
-    # Download image from Telegram
+    # Get photo
     photo = update.message.reply_to_message.photo[-1]
     file = await context.bot.get_file(photo.file_id)
     photo_bytes = await file.download_as_bytearray()
 
-    # Open and grayscale image, apply dark tint
+    # Open image and grayscale with black overlay
     image = Image.open(io.BytesIO(photo_bytes)).convert("L").convert("RGBA")
     black_overlay = Image.new("RGBA", image.size, (0, 0, 0, 120))
     image = Image.alpha_composite(image, black_overlay)
 
-    # Crop image to center square
+    # Crop to 1:1
     width, height = image.size
     side = min(width, height)
     left = (width - side) // 2
@@ -33,7 +33,7 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
     font_path = Path(__file__).parent / "fonts" / "arialbd.ttf"
     font_size = int(image.width * 0.2)
 
-    # Fit text within 85% of image width
+    # Load font and resize until it fits 85% width
     while True:
         try:
             font = ImageFont.truetype(str(font_path), font_size)
@@ -45,24 +45,22 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
             break
         font_size -= 2
 
+    # Center text
     text_height = bbox[3] - bbox[1]
     x = (image.width - text_width) / 2
-    y = int(image.height * 0.6 - text_height / 2)
+    y = (image.height - text_height) / 2
 
-    # Create blurred glow layer
-    glow_layer = Image.new("RGBA", image.size, (0, 0, 0, 0))
-    glow_draw = ImageDraw.Draw(glow_layer)
-    glow_draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
-    blurred_glow = glow_layer.filter(ImageFilter.GaussianBlur(radius=4))
+    # Red glow (tight 3x3)
+    for dx in range(-1, 2):
+        for dy in range(-1, 2):
+            if dx == 0 and dy == 0:
+                continue
+            draw.text((x + dx, y + dy), text, font=font, fill=(255, 0, 0, 255))
 
-    # Composite glow and base image
-    image = Image.alpha_composite(image, blurred_glow)
-
-    # Draw final crisp red text
-    draw = ImageDraw.Draw(image)
+    # Final red text
     draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
 
-    # Send back the edited image
+    # Send back
     output = io.BytesIO()
     image.convert("RGB").save(output, format="JPEG")
     output.seek(0)
