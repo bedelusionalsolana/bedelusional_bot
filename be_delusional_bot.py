@@ -18,30 +18,36 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
     image = Image.open(io.BytesIO(photo_bytes)).convert("L").convert("RGBA")
 
     # Apply dark black overlay
-    black_overlay = Image.new("RGBA", image.size, (0, 0, 0, 120))  # (R, G, B, Alpha)
+    black_overlay = Image.new("RGBA", image.size, (0, 0, 0, 120))
     image = Image.alpha_composite(image, black_overlay)
 
     # Draw the text
     draw = ImageDraw.Draw(image)
     text = "BE DELUSIONAL"
-    font_size = int(min(image.size) / 6)
+    font_size = int(image.width * 0.13)  # Bigger font based on image width
 
     try:
-        # Use bold Arial font if available
-        font = ImageFont.truetype("arialbd.ttf", font_size)
+        font = ImageFont.truetype("arialbd.ttf", font_size)  # Bold font
     except:
         font = ImageFont.load_default()
 
-    # Calculate position to center the text
+    # Center the text
     bbox = draw.textbbox((0, 0), text, font=font)
     text_width = bbox[2] - bbox[0]
     text_height = bbox[3] - bbox[1]
     x = (image.width - text_width) / 2
     y = (image.height - text_height) / 2
 
-    draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))  # Red text
+    # Add red glow shadow
+    shadow_color = (255, 0, 0, 100)
+    for dx in range(-2, 3):
+        for dy in range(-2, 3):
+            draw.text((x + dx, y + dy), text, font=font, fill=shadow_color)
 
-    # Save edited image to memory and send it back
+    # Final red text
+    draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
+
+    # Save edited image and send
     output = io.BytesIO()
     image.convert("RGB").save(output, format="JPEG")
     output.seek(0)
