@@ -66,7 +66,7 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
     output = io.BytesIO()
     image.convert("RGB").save(output, format="JPEG")
     output.seek(0)
-    await update.message.reply_photo(photo=output, caption="be delusional.")
+    await update.message.reply_photo(photo=output, caption="BE DELUSIONAL.")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("I'm alive. Reply to a photo with /bedelusional.")
