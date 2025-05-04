@@ -21,27 +21,31 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     draw = ImageDraw.Draw(image)
     text = "BE DELUSIONAL"
-    font_size = int(image.width * 0.2)
 
-    # Load bold font from /fonts
+    # Dynamically size the font to fit the width
     font_path = Path(__file__).parent / "fonts" / "arialbd.ttf"
-    try:
-        font = ImageFont.truetype(str(font_path), font_size)
-    except Exception as e:
-        print("Font load error:", e)
-        font = ImageFont.load_default()
+    font_size = int(image.width * 0.2)
+    while True:
+        try:
+            font = ImageFont.truetype(str(font_path), font_size)
+        except:
+            font = ImageFont.load_default()
+        bbox = font.getbbox(text)
+        text_width = bbox[2] - bbox[0]
+        if text_width <= image.width * 0.9:
+            break
+        font_size -= 2
 
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_width = bbox[2] - bbox[0]
+    # Center the text
     text_height = bbox[3] - bbox[1]
     x = (image.width - text_width) / 2
     y = (image.height - text_height) / 2
 
-    # Glow effect
-    glow_color = (255, 0, 0, 100)
+    # Red glow effect
+    shadow_color = (255, 0, 0, 100)
     for dx in range(-2, 3):
         for dy in range(-2, 3):
-            draw.text((x + dx, y + dy), text, font=font, fill=glow_color)
+            draw.text((x + dx, y + dy), text, font=font, fill=shadow_color)
 
     # Final red text
     draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
