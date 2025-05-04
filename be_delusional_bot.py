@@ -14,17 +14,24 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
     file = await context.bot.get_file(photo.file_id)
     photo_bytes = await file.download_as_bytearray()
 
+    # Step 1: Convert and darken image
     image = Image.open(io.BytesIO(photo_bytes)).convert("L").convert("RGBA")
-
     black_overlay = Image.new("RGBA", image.size, (0, 0, 0, 120))
     image = Image.alpha_composite(image, black_overlay)
 
+    # Step 2: Crop to 1:1 (square)
+    width, height = image.size
+    side = min(width, height)
+    left = (width - side) // 2
+    top = (height - side) // 2
+    image = image.crop((left, top, left + side, top + side))
+
+    # Step 3: Prepare text and font
     draw = ImageDraw.Draw(image)
     text = "BE DELUSIONAL"
-
-    # Dynamically size the font to fit the width
     font_path = Path(__file__).parent / "fonts" / "arialbd.ttf"
     font_size = int(image.width * 0.2)
+
     while True:
         try:
             font = ImageFont.truetype(str(font_path), font_size)
@@ -32,24 +39,30 @@ async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
             font = ImageFont.load_default()
         bbox = font.getbbox(text)
         text_width = bbox[2] - bbox[0]
-        if text_width <= image.width * 0.9:
+        if text_width <= image.width * 0.85:
             break
         font_size -= 2
 
-    # Center the text
+    # Step 4: Text position (slightly lower than center)
     text_height = bbox[3] - bbox[1]
     x = (image.width - text_width) / 2
-    y = (image.height - text_height) / 2
+    y = int(image.height * 0.6 - text_height / 2)
 
-    # Red glow effect
-    shadow_color = (255, 0, 0, 100)
+    # Step 5: Red glow (optional)
+    glow_color = (255, 0, 0, 80)
+    for dx in range(-3, 4):
+        for dy in range(-3, 4):
+            draw.text((x + dx, y + dy), text, font=font, fill=glow_color)
+
+    # Step 6: Black shadow
     for dx in range(-2, 3):
         for dy in range(-2, 3):
-            draw.text((x + dx, y + dy), text, font=font, fill=shadow_color)
+            draw.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 255))
 
-    # Final red text
+    # Step 7: Final red text
     draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
 
+    # Step 8: Send image
     output = io.BytesIO()
     image.convert("RGB").save(output, format="JPEG")
     output.seek(0)
