@@ -5,75 +5,59 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from PIL import Image, ImageDraw, ImageFont
 
-async def be_delusional(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def sexy_solana_summer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.reply_to_message or not update.message.reply_to_message.photo:
-        await update.message.reply_text("Reply to a photo with /bedelusional.")
+        await update.message.reply_text("Reply to a photo with /sss.")
         return
 
-    # Get photo
+    # Download the replied photo
     photo = update.message.reply_to_message.photo[-1]
     file = await context.bot.get_file(photo.file_id)
     photo_bytes = await file.download_as_bytearray()
 
-    # Open image and grayscale with black overlay
+    # Step 1: Open, grayscale, darken
     image = Image.open(io.BytesIO(photo_bytes)).convert("L").convert("RGBA")
     black_overlay = Image.new("RGBA", image.size, (0, 0, 0, 120))
     image = Image.alpha_composite(image, black_overlay)
 
-    # Crop to 1:1
+    # Step 2: Crop to square (1:1)
     width, height = image.size
     side = min(width, height)
     left = (width - side) // 2
     top = (height - side) // 2
-    image = image.crop((left, top, left + side, top + side))
+    right = left + side
+    bottom = top + side
+    image = image.crop((left, top, right, bottom))
 
-    # Prepare text
-    draw = ImageDraw.Draw(image)
-    text = "BE DELUSIONAL"
-    font_path = Path(__file__).parent / "fonts" / "arialbd.ttf"
-    font_size = int(image.width * 0.2)
+    # Step 3: Load logo
+    logo_path = Path(__file__).parent / "assets" / "TEXTSAA.png"
+    logo = Image.open(str(logo_path)).convert("RGBA")
 
-    # Load font and resize until it fits 85% width
-    while True:
-        try:
-            font = ImageFont.truetype(str(font_path), font_size)
-        except:
-            font = ImageFont.load_default()
-        bbox = font.getbbox(text)
-        text_width = bbox[2] - bbox[0]
-        if text_width <= image.width * 0.85:
-            break
-        font_size -= 2
+    # Resize logo to 70% of image width, keep aspect ratio
+    target_width = int(image.width * 0.7)
+    aspect_ratio = logo.width / logo.height
+    target_height = int(target_width / aspect_ratio)
+    logo = logo.resize((target_width, target_height), Image.LANCZOS)
 
-    # Center text
-    text_height = bbox[3] - bbox[1]
-    x = (image.width - text_width) / 2
-    y = (image.height - text_height) / 2
+    # Step 4: Center the logo
+    x = (image.width - logo.width) // 2
+    y = (image.height - logo.height) // 2
+    image.paste(logo, (x, y), logo)  # use logo as its own transparency mask
 
-    # Red glow (tight 3x3)
-    for dx in range(-1, 2):
-        for dy in range(-1, 2):
-            if dx == 0 and dy == 0:
-                continue
-            draw.text((x + dx, y + dy), text, font=font, fill=(255, 0, 0, 255))
-
-    # Final red text
-    draw.text((x, y), text, font=font, fill=(255, 0, 0, 255))
-
-    # Send back
+    # Step 5: Send it back
     output = io.BytesIO()
     image.convert("RGB").save(output, format="JPEG")
     output.seek(0)
-    await update.message.reply_photo(photo=output, caption="BE DELUSIONAL.")
+    await update.message.reply_photo(photo=output, caption="Sexy Solana Summer 🌞")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("I'm alive. Reply to a photo with /bedelusional.")
+    await update.message.reply_text("I'm alive. Reply to a photo with /sss.")
 
 def main():
     token = os.environ["BOT_TOKEN"]
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("bedelusional", be_delusional))
+    app.add_handler(CommandHandler("sss", sexy_solana_summer))
     app.run_polling()
 
 if __name__ == "__main__":
